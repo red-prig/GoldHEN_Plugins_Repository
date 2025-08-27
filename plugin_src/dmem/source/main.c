@@ -32,9 +32,11 @@ int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, size_t len, int prot, 
 [[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapFlexibleMemory_hook(void** addr, size_t len, int prot, int flags) {
 
+  final_printf("[GoldHEN] sceKernelMapFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX \n", *addr, len, prot, flags);
+
   int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, size_t, int, int), addr, len, prot, flags);
 
-  final_printf("[GoldHEN] sceKernelMapFlexibleMemory called on 0x%010llX, returning = %d\n", *addr, ret);
+  final_printf("[GoldHEN] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = %d\n", *addr, ret);
 
   return ret;
 };
