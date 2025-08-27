@@ -49,7 +49,8 @@ int32_t sceKernelMapFlexibleMemory_hook(void** addr, uint64_t len, int prot, int
 
   final_printf("[GoldHEN] sceKernelMapFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX \n", *addr, len, prot, flags);
 
-  int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, uint64_t, int, int), addr, len, prot, flags);
+  //int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, uint64_t, int, int), addr, len, prot, flags);
+  int32_t ret = HOOK_CONTINUE(sceKernelMapNamedFlexibleMemory, int(*)(void**, uint64_t, int, int, const char*), addr, len, prot, flags, "");
 
   final_printf("[GoldHEN] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
 
