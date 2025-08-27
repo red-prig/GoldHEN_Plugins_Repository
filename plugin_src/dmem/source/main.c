@@ -56,12 +56,26 @@ int sceKernelOpen_hook(const char* path, int flags, OrbisKernelMode mode) {
   return ret;
 };
 
+typedef struct {
+    void* start_addr;
+    void* end_addr;
+    off_t offset;
+    int32_t prot;
+    int32_t mtype;
+    unsigned isFlexibleMemory : 1;
+    unsigned isDirectMemory : 1;
+    unsigned isStack : 1;
+    unsigned isPooledMemory : 1;
+    unsigned isCommitted : 1;
+    char name[32];
+} _OrbisKernelVirtualQueryInfo;
+
 //__attribute__ ((force_align_arg_pointer))
-int sceKernelVirtualQuery_hook(const void * addr, int flags, OrbisKernelVirtualQueryInfo * info, size_t size) {
+int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtualQueryInfo * info, size_t size) {
 
   final_printf("[4]\n");
 
-  int ret = HOOK_CONTINUE(sceKernelVirtualQuery, int(*)(const void *, int, OrbisKernelVirtualQueryInfo *, size_t), addr, flags, info, size);
+  int ret = HOOK_CONTINUE(sceKernelVirtualQuery, int(*)(const void *, int, _OrbisKernelVirtualQueryInfo *, size_t), addr, flags, info, size);
 
   final_printf("[GoldHEN] sceKernelVirtualQuery called on 0x%010llX, returning = %d\n"
                "  start =0x%010llX\n"
