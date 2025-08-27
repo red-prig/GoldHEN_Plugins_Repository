@@ -7,6 +7,7 @@ attr_public const char *g_pluginDesc = "Used for testing various memory behavior
 attr_public const char *g_pluginAuth = "stephen";
 attr_public u32 g_pluginVersion = 0x00000100; // 1.00
 
+HOOK_INIT(mmap);
 HOOK_INIT(sceKernelMapNamedFlexibleMemory);
 HOOK_INIT(sceKernelMapFlexibleMemory);
 HOOK_INIT(sceKernelOpen);
@@ -17,7 +18,21 @@ HOOK_INIT(sceKernelVirtualQuery);
 //int sceKernelMapNamedFlexibleMemory(void**, size_t, int, int, const char*);
 //int sceKernelOpen(const char*, int, OrbisKernelMode);
 //int sceKernelVirtualQuery(const void *, int, OrbisKernelVirtualQueryInfo *, size_t);
-//int mmap(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos);
+void* mmap(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos);
+
+
+[[gnu::force_align_arg_pointer]]
+void* mmap_hook(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos) {
+
+    final_printf("[GoldHEN] mmap-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX,%d,0x%010llX \n", addr, len, prot, flags, fd, pos);
+
+    void* ret = HOOK_CONTINUE(mmap, void*(*)(void*, uint64_t, int, int, int, uint64_t), addr, len, prot, flags, fd, pos);
+
+    final_printf("[GoldHEN] mmap<- returning = 0x%p\n", ret);
+
+    return ret;
+
+}
 
 [[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, size_t len, int prot, int flags, const char* name) {
@@ -107,8 +122,10 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   final_printf("[GoldHEN] Plugin Author(s): %s\n", g_pluginAuth);
   boot_ver();
 
-  HOOK32(sceKernelMapNamedFlexibleMemory);
-  HOOK32(sceKernelMapFlexibleMemory);
+  HOOK32(mmap);
+
+  //HOOK32(sceKernelMapNamedFlexibleMemory);
+  //HOOK32(sceKernelMapFlexibleMemory);
   HOOK32(sceKernelOpen);
   HOOK32(sceKernelVirtualQuery);
 
@@ -120,8 +137,10 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
 
   final_printf("[GoldHEN] UNHOOKED\n");
 
-  UNHOOK(sceKernelMapNamedFlexibleMemory);
-  UNHOOK(sceKernelMapFlexibleMemory);
+  UNHOOK(mmap);
+
+  //UNHOOK(sceKernelMapNamedFlexibleMemory);
+  //UNHOOK(sceKernelMapFlexibleMemory);
   UNHOOK(sceKernelOpen);
   UNHOOK(sceKernelVirtualQuery);
 
