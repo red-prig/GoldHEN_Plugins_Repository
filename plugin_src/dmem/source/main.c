@@ -15,14 +15,12 @@ HOOK_INIT(sceKernelVirtualQuery);
 // Function defs
 //int sceKernelMapFlexibleMemory(void**, size_t, int, int);
 //int sceKernelMapNamedFlexibleMemory(void**, size_t, int, int, const char*);
-int sceKernelOpen(const char*, int, OrbisKernelMode);
+//int sceKernelOpen(const char*, int, OrbisKernelMode);
 //int sceKernelVirtualQuery(const void *, int, OrbisKernelVirtualQueryInfo *, size_t);
 //int mmap(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos);
 
-//__attribute__ ((force_align_arg_pointer))
+[[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, size_t len, int prot, int flags, const char* name) {
-
-  final_printf("[1]\n");
 
   int32_t ret = HOOK_CONTINUE(sceKernelMapNamedFlexibleMemory, int(*)(void**, size_t, int, int, const char*), addr, len, prot, flags, name);
   
@@ -31,10 +29,8 @@ int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, size_t len, int prot, 
   return ret;
 };
 
-//__attribute__ ((force_align_arg_pointer))
+[[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapFlexibleMemory_hook(void** addr, size_t len, int prot, int flags) {
-
-  final_printf("[2]\n");
 
   int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, size_t, int, int), addr, len, prot, flags);
 
@@ -43,11 +39,8 @@ int32_t sceKernelMapFlexibleMemory_hook(void** addr, size_t len, int prot, int f
   return ret;
 };
 
-//__attribute__ ((force_align_arg_pointer))
 [[gnu::force_align_arg_pointer]]
 int sceKernelOpen_hook(const char* path, int flags, OrbisKernelMode mode) {
-
-  final_printf("[3]\n");
 
   int ret = HOOK_CONTINUE(sceKernelOpen, int(*)(const char*, int, OrbisKernelMode), path, flags, mode);
 
@@ -70,10 +63,8 @@ typedef struct {
     char name[32];
 } _OrbisKernelVirtualQueryInfo;
 
-//__attribute__ ((force_align_arg_pointer))
+[[gnu::force_align_arg_pointer]]
 int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtualQueryInfo * info, size_t size) {
-
-  final_printf("[4]\n");
 
   int ret = HOOK_CONTINUE(sceKernelVirtualQuery, int(*)(const void *, int, _OrbisKernelVirtualQueryInfo *, size_t), addr, flags, info, size);
 
@@ -107,30 +98,31 @@ int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtual
   return ret;
 };
 
-//__attribute__ ((force_align_arg_pointer))
 [[gnu::force_align_arg_pointer]]
 int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
+
   final_printf("[GoldHEN] <%s\\Ver.0x%08x> %s\n", g_pluginName, g_pluginVersion, __func__);
   final_printf("[GoldHEN] Plugin Author(s): %s\n", g_pluginAuth);
   boot_ver();
 
-  //HOOK32(sceKernelMapNamedFlexibleMemory);
-  //HOOK32(sceKernelMapFlexibleMemory);
+  HOOK32(sceKernelMapNamedFlexibleMemory);
+  HOOK32(sceKernelMapFlexibleMemory);
   HOOK32(sceKernelOpen);
-  //HOOK32(sceKernelVirtualQuery);
+  HOOK32(sceKernelVirtualQuery);
+
   return 0;
 };
 
-
-//__attribute__ ((force_align_arg_pointer))
 [[gnu::force_align_arg_pointer]]
 int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
+
   final_printf("[GoldHEN] UNHOOKED\n");
 
-  //UNHOOK(sceKernelMapNamedFlexibleMemory);
-  //UNHOOK(sceKernelMapFlexibleMemory);
+  UNHOOK(sceKernelMapNamedFlexibleMemory);
+  UNHOOK(sceKernelMapFlexibleMemory);
   UNHOOK(sceKernelOpen);
-  //UNHOOK(sceKernelVirtualQuery);
+  UNHOOK(sceKernelVirtualQuery);
+
   return 0;
 };
 
