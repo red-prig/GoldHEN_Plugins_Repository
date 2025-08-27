@@ -84,11 +84,22 @@ typedef struct {
 } _OrbisKernelVirtualQueryInfo;
 
 [[gnu::force_align_arg_pointer]]
-int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtualQueryInfo * info, size_t size) {
+int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtualQueryInfo * info, uint64_t size) {
 
-  int ret = HOOK_CONTINUE(sceKernelVirtualQuery, int(*)(const void *, int, _OrbisKernelVirtualQueryInfo *, size_t), addr, flags, info, size);
+  final_printf("[GoldHEN] sceKernelVirtualQuery-> called on 0x%010llX,%d \n", addr, flags);
 
-  final_printf("[GoldHEN] sceKernelVirtualQuery called on 0x%010llX, returning = %d\n"
+  int ret = HOOK_CONTINUE(sceKernelVirtualQuery, int(*)(const void *, int, _OrbisKernelVirtualQueryInfo *, uint64_t), addr, flags, info, size);
+
+  final_printf("[GoldHEN] sceKernelVirtualQuery<- called on 0x%010llX, returning = %d\n", addr, ret);
+  final_printf("  start =0x%010llX\n", info->start_addr);
+  final_printf("  end   =0x%010llX\n", info->end_addr);
+  final_printf("  offset=0x%010lX\n", info->offset);
+  final_printf("  prot  =0x%02X\n", info->prot);
+  final_printf("  mtype =%d\n", info->mtype);
+  final_printf("  name  =%s\n", info->name);
+
+  /*
+  final_printf("[GoldHEN] sceKernelVirtualQuery<- called on 0x%010llX, returning = %d\n"
                "  start =0x%010llX\n"
                "  end   =0x%010llX\n"
                "  offset=0x%010lX\n"
@@ -114,6 +125,7 @@ int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtual
    info->isCommitted,
    info->name
   );
+  */
 
   return ret;
 };
