@@ -37,9 +37,11 @@ void* mmap_hook(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t 
 [[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, uint64_t len, int prot, int flags, const char* name) {
 
+  final_printf("[GoldHEN] sceKernelMapNamedFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX,%s \n", *addr, len, prot, flags, name);
+
   int32_t ret = HOOK_CONTINUE(sceKernelMapNamedFlexibleMemory, int(*)(void**, uint64_t, int, int, const char*), addr, len, prot, flags, name);
   
-  final_printf("[GoldHEN] sceKernelMapNamedFlexibleMemory called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
+  final_printf("[GoldHEN] sceKernelMapNamedFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
 
   return ret;
 };
@@ -47,12 +49,12 @@ int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, uint64_t len, int prot
 [[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapFlexibleMemory_hook(void** addr, uint64_t len, int prot, int flags) {
 
-  final_printf("[GoldHEN] sceKernelMapFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX \n", *addr, len, prot, flags);
+  //final_printf("[GoldHEN] sceKernelMapFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX \n", *addr, len, prot, flags);
 
   //int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, uint64_t, int, int), addr, len, prot, flags);
-  int32_t ret = HOOK_CONTINUE(sceKernelMapNamedFlexibleMemory, int(*)(void**, uint64_t, int, int, const char*), addr, len, prot, flags, "");
+  int32_t ret = sceKernelMapNamedFlexibleMemory(addr, len, prot, flags, "");
 
-  final_printf("[GoldHEN] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
+  //final_printf("[GoldHEN] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
 
   return ret;
 };
