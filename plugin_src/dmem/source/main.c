@@ -35,23 +35,23 @@ void* mmap_hook(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t 
 }
 
 [[gnu::force_align_arg_pointer]]
-int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, size_t len, int prot, int flags, const char* name) {
+int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, uint64_t len, int prot, int flags, const char* name) {
 
-  int32_t ret = HOOK_CONTINUE(sceKernelMapNamedFlexibleMemory, int(*)(void**, size_t, int, int, const char*), addr, len, prot, flags, name);
+  int32_t ret = HOOK_CONTINUE(sceKernelMapNamedFlexibleMemory, int(*)(void**, uint64_t, int, int, const char*), addr, len, prot, flags, name);
   
-  final_printf("[GoldHEN] sceKernelMapNamedFlexibleMemory called on 0x%010llX, returning = %d\n", *addr, ret);
+  final_printf("[GoldHEN] sceKernelMapNamedFlexibleMemory called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
 
   return ret;
 };
 
 [[gnu::force_align_arg_pointer]]
-int32_t sceKernelMapFlexibleMemory_hook(void** addr, size_t len, int prot, int flags) {
+int32_t sceKernelMapFlexibleMemory_hook(void** addr, uint64_t len, int prot, int flags) {
 
   final_printf("[GoldHEN] sceKernelMapFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX \n", *addr, len, prot, flags);
 
-  int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, size_t, int, int), addr, len, prot, flags);
+  int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, uint64_t, int, int), addr, len, prot, flags);
 
-  final_printf("[GoldHEN] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = %d\n", *addr, ret);
+  final_printf("[GoldHEN] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
 
   return ret;
 };
@@ -122,10 +122,10 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   final_printf("[GoldHEN] Plugin Author(s): %s\n", g_pluginAuth);
   boot_ver();
 
-  HOOK32(mmap);
+  //HOOK32(mmap);
 
-  //HOOK32(sceKernelMapNamedFlexibleMemory);
-  //HOOK32(sceKernelMapFlexibleMemory);
+  HOOK32(sceKernelMapNamedFlexibleMemory);
+  HOOK32(sceKernelMapFlexibleMemory);
   HOOK32(sceKernelOpen);
   HOOK32(sceKernelVirtualQuery);
 
@@ -137,10 +137,10 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
 
   final_printf("[GoldHEN] UNHOOKED\n");
 
-  UNHOOK(mmap);
+  //UNHOOK(mmap);
 
-  //UNHOOK(sceKernelMapNamedFlexibleMemory);
-  //UNHOOK(sceKernelMapFlexibleMemory);
+  UNHOOK(sceKernelMapNamedFlexibleMemory);
+  UNHOOK(sceKernelMapFlexibleMemory);
   UNHOOK(sceKernelOpen);
   UNHOOK(sceKernelVirtualQuery);
 
