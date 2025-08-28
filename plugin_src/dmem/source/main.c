@@ -224,7 +224,7 @@ int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtual
 int scePthreadCreate_hook(void** thread, void* attr, void* func, void* arg, const char* name) {
 
     char Selfname[32] = {};
-    scePthreadGetname(scePthreadSelf, &Selfname);
+    scePthreadGetname(scePthreadSelf(), &Selfname);
    
     final_printf("[GoldHEN] [%s] scePthreadCreate(%s) \n", &Selfname, name);
 
