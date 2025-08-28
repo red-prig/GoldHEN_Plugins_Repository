@@ -99,7 +99,7 @@ HOOK_INIT(sceKernelMapFlexibleMemory);
 HOOK_INIT(sceKernelOpen);
 HOOK_INIT(sceKernelStat);
 HOOK_INIT(sceKernelVirtualQuery);
-
+HOOK_INIT(scePthreadCreate);
 
 // Function defs
 //int sceKernelMapFlexibleMemory(void**, size_t, int, int);
@@ -217,6 +217,22 @@ int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtual
   return ret;
 };
 
+//void* scePthreadSelf(void);
+//int scePthreadGetname(void* thread, char* name);
+
+[[gnu::force_align_arg_pointer]]
+int scePthreadCreate_hook(void** thread, void* attr, void* func, void* arg, const char* name) {
+
+    char Selfname[32] = {};
+    scePthreadGetname(scePthreadSelf, &Selfname);
+   
+    final_printf("[GoldHEN] [%s] scePthreadCreate(%s) \n", &Selfname, name);
+
+    int ret = HOOK_CONTINUE(scePthreadCreate, int(*)(void** thread, void* attr, void* func, void* arg, const char* name), thread, attr, func, arg, name);
+
+    return ret;
+}
+
 [[gnu::force_align_arg_pointer]]
 int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
 
@@ -229,6 +245,7 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   HOOK32(sceKernelOpen);
   HOOK16(sceKernelStat);
   HOOK16(sceKernelVirtualQuery);
+  HOOK16(scePthreadCreate);
 
   return 0;
 };
@@ -243,6 +260,7 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
   UNHOOK(sceKernelOpen);
   UNHOOK(sceKernelStat);
   UNHOOK(sceKernelVirtualQuery);
+  UNHOOK(scePthreadCreate);
 
   return 0;
 };
