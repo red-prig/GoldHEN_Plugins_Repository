@@ -97,7 +97,9 @@ HOOK_INIT(mmap);
 HOOK_INIT(sceKernelMapNamedFlexibleMemory);
 HOOK_INIT(sceKernelMapFlexibleMemory);
 HOOK_INIT(sceKernelOpen);
+HOOK_INIT(sceKernelStat);
 HOOK_INIT(sceKernelVirtualQuery);
+
 
 // Function defs
 //int sceKernelMapFlexibleMemory(void**, size_t, int, int);
@@ -152,6 +154,16 @@ int sceKernelOpen_hook(const char* path, int flags, OrbisKernelMode mode) {
 
   return ret;
 };
+
+[[gnu::force_align_arg_pointer]]
+int sceKernelStat_hook(const char* path, void* sb) {
+
+    int ret = HOOK_CONTINUE(sceKernelStat, int(*)(const char* path, void* sb), path, sb);
+
+    final_printf("[GoldHEN] sceKernelStat called on path %s, returning = %d\n", path, ret);
+
+    return ret;
+}
 
 typedef struct {
     void* start_addr;
@@ -215,6 +227,7 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   HOOK32(sceKernelMapNamedFlexibleMemory);
   HOOK16(sceKernelMapFlexibleMemory);
   HOOK32(sceKernelOpen);
+  HOOK16(sceKernelStat);
   HOOK16(sceKernelVirtualQuery);
 
   return 0;
@@ -228,6 +241,7 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
   UNHOOK(sceKernelMapNamedFlexibleMemory);
   UNHOOK(sceKernelMapFlexibleMemory);
   UNHOOK(sceKernelOpen);
+  UNHOOK(sceKernelStat);
   UNHOOK(sceKernelVirtualQuery);
 
   return 0;
