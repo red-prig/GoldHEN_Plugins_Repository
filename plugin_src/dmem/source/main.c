@@ -4,7 +4,7 @@
 
 attr_public const char *g_pluginName = "dmem";
 attr_public const char *g_pluginDesc = "Used for testing various memory behaviors";
-attr_public const char *g_pluginAuth = "stephen";
+attr_public const char *g_pluginAuth = "stephen, red_prig";
 attr_public u32 g_pluginVersion = 0x00000100; // 1.00
 
 extern size_t Detour_GetInstructionSize(Detour* This, uint64_t Address, size_t MinSize);
@@ -104,9 +104,7 @@ HOOK_INIT(sceKernelVirtualQuery);
 //int sceKernelMapNamedFlexibleMemory(void**, size_t, int, int, const char*);
 //int sceKernelOpen(const char*, int, OrbisKernelMode);
 //int sceKernelVirtualQuery(const void *, int, OrbisKernelVirtualQueryInfo *, size_t);
-void* mmap(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos);
-
-
+//void* mmap(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos);
 
 [[gnu::force_align_arg_pointer]]
 void* mmap_hook(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos) {
@@ -136,12 +134,11 @@ int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, uint64_t len, int prot
 [[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapFlexibleMemory_hook(void** addr, uint64_t len, int prot, int flags) {
 
-  //final_printf("[GoldHEN] sceKernelMapFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX \n", *addr, len, prot, flags);
+  final_printf("[GoldHEN] sceKernelMapFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX \n", *addr, len, prot, flags);
 
-  //int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, uint64_t, int, int), addr, len, prot, flags);
-  int32_t ret = sceKernelMapNamedFlexibleMemory(addr, len, prot, flags, "");
+  int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, uint64_t, int, int), addr, len, prot, flags);
 
-  //final_printf("[GoldHEN] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
+  final_printf("[GoldHEN] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
 
   return ret;
 };
@@ -176,16 +173,7 @@ int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtual
   final_printf("[GoldHEN] sceKernelVirtualQuery-> called on 0x%010llX,%d \n", addr, flags);
 
   int ret = HOOK_CONTINUE(sceKernelVirtualQuery, int(*)(const void *, int, _OrbisKernelVirtualQueryInfo *, uint64_t), addr, flags, info, size);
-
-  final_printf("[GoldHEN] sceKernelVirtualQuery<- called on 0x%010llX, returning = %d\n", addr, ret);
-  final_printf("  start =0x%010llX\n", info->start_addr);
-  final_printf("  end   =0x%010llX\n", info->end_addr);
-  final_printf("  offset=0x%010lX\n", info->offset);
-  final_printf("  prot  =0x%02X\n", info->prot);
-  final_printf("  mtype =%d\n", info->mtype);
-  final_printf("  name  =%s\n", info->name);
-
-  /*
+  
   final_printf("[GoldHEN] sceKernelVirtualQuery<- called on 0x%010llX, returning = %d\n"
                "  start =0x%010llX\n"
                "  end   =0x%010llX\n"
@@ -212,7 +200,7 @@ int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtual
    info->isCommitted,
    info->name
   );
-  */
+  
 
   return ret;
 };
@@ -224,10 +212,8 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   final_printf("[GoldHEN] Plugin Author(s): %s\n", g_pluginAuth);
   boot_ver();
 
-  //HOOK32(mmap);
-
   HOOK32(sceKernelMapNamedFlexibleMemory);
-  HOOK32(sceKernelMapFlexibleMemory);
+  HOOK16(sceKernelMapFlexibleMemory);
   HOOK32(sceKernelOpen);
   HOOK16(sceKernelVirtualQuery);
 
@@ -238,8 +224,6 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
 int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
 
   final_printf("[GoldHEN] UNHOOKED\n");
-
-  //UNHOOK(mmap);
 
   UNHOOK(sceKernelMapNamedFlexibleMemory);
   UNHOOK(sceKernelMapFlexibleMemory);
