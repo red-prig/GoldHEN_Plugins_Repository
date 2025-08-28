@@ -108,6 +108,10 @@ HOOK_INIT(scePthreadCreate);
 //int sceKernelVirtualQuery(const void *, int, OrbisKernelVirtualQueryInfo *, size_t);
 //void* mmap(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos);
 
+#define GET_SELF_NAME() \
+    char Selfname[32] = {}; \
+    scePthreadGetname(scePthreadSelf(), &Selfname);
+
 [[gnu::force_align_arg_pointer]]
 void* mmap_hook(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos) {
 
@@ -124,11 +128,13 @@ void* mmap_hook(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t 
 [[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, uint64_t len, int prot, int flags, const char* name) {
 
-  final_printf("[GoldHEN] sceKernelMapNamedFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX,%s \n", *addr, len, prot, flags, name);
+  GET_SELF_NAME();
+
+  final_printf("[GoldHEN] [%s] sceKernelMapNamedFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX,%s \n", &Selfname, *addr, len, prot, flags, name);
 
   int32_t ret = HOOK_CONTINUE(sceKernelMapNamedFlexibleMemory, int(*)(void**, uint64_t, int, int, const char*), addr, len, prot, flags, name);
   
-  final_printf("[GoldHEN] sceKernelMapNamedFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
+  final_printf("[GoldHEN] [%s] sceKernelMapNamedFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", &Selfname, *addr, ret);
 
   return ret;
 };
@@ -136,11 +142,13 @@ int32_t sceKernelMapNamedFlexibleMemory_hook(void** addr, uint64_t len, int prot
 [[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapFlexibleMemory_hook(void** addr, uint64_t len, int prot, int flags) {
 
-  final_printf("[GoldHEN] sceKernelMapFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX \n", *addr, len, prot, flags);
+  GET_SELF_NAME();
+
+  final_printf("[GoldHEN] [%s] sceKernelMapFlexibleMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX \n", &Selfname, *addr, len, prot, flags);
 
   int32_t ret = HOOK_CONTINUE(sceKernelMapFlexibleMemory, int(*)(void**, uint64_t, int, int), addr, len, prot, flags);
 
-  final_printf("[GoldHEN] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", *addr, ret);
+  final_printf("[GoldHEN] [%s] sceKernelMapFlexibleMemory<- called on 0x%010llX, returning = 0x%08llX\n", &Selfname, *addr, ret);
 
   return ret;
 };
@@ -148,9 +156,11 @@ int32_t sceKernelMapFlexibleMemory_hook(void** addr, uint64_t len, int prot, int
 [[gnu::force_align_arg_pointer]]
 int sceKernelOpen_hook(const char* path, int flags, OrbisKernelMode mode) {
 
+  GET_SELF_NAME();
+
   int ret = HOOK_CONTINUE(sceKernelOpen, int(*)(const char*, int, OrbisKernelMode), path, flags, mode);
 
-  final_printf("[GoldHEN] sceKernelOpen called on path %s, returning = %d\n", path, ret);
+  final_printf("[GoldHEN] [%s] sceKernelOpen called on path %s, returning = %d\n", &Selfname, path, ret);
 
   return ret;
 };
@@ -158,9 +168,11 @@ int sceKernelOpen_hook(const char* path, int flags, OrbisKernelMode mode) {
 [[gnu::force_align_arg_pointer]]
 int sceKernelStat_hook(const char* path, void* sb) {
 
+    GET_SELF_NAME();
+
     int ret = HOOK_CONTINUE(sceKernelStat, int(*)(const char* path, void* sb), path, sb);
 
-    final_printf("[GoldHEN] sceKernelStat called on path %s, returning = %d\n", path, ret);
+    final_printf("[GoldHEN] [%s] sceKernelStat called on path %s, returning = %d\n", &Selfname, path, ret);
 
     return ret;
 }
@@ -182,11 +194,13 @@ typedef struct {
 [[gnu::force_align_arg_pointer]]
 int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtualQueryInfo * info, uint64_t size) {
 
-  final_printf("[GoldHEN] sceKernelVirtualQuery-> called on 0x%010llX,%d \n", addr, flags);
+  GET_SELF_NAME();
+
+  final_printf("[GoldHEN] [%s] sceKernelVirtualQuery-> called on 0x%010llX,%d \n", &Selfname, addr, flags);
 
   int ret = HOOK_CONTINUE(sceKernelVirtualQuery, int(*)(const void *, int, _OrbisKernelVirtualQueryInfo *, uint64_t), addr, flags, info, size);
   
-  final_printf("[GoldHEN] sceKernelVirtualQuery<- called on 0x%010llX, returning = %d\n"
+  final_printf("[GoldHEN] [%s] sceKernelVirtualQuery<- called on 0x%010llX, returning = %d\n"
                "  start =0x%010llX\n"
                "  end   =0x%010llX\n"
                "  offset=0x%010lX\n"
@@ -199,6 +213,7 @@ int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtual
                "  isCommitted     =%d\n"
                "  name =%s\n"
    ,
+   &Selfname,
    addr, ret,
    info->start_addr,
    info->end_addr,
@@ -217,14 +232,10 @@ int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtual
   return ret;
 };
 
-//void* scePthreadSelf(void);
-//int scePthreadGetname(void* thread, char* name);
-
 [[gnu::force_align_arg_pointer]]
 int scePthreadCreate_hook(void** thread, void* attr, void* func, void* arg, const char* name) {
 
-    char Selfname[32] = {};
-    scePthreadGetname(scePthreadSelf(), &Selfname);
+    GET_SELF_NAME();
    
     final_printf("[GoldHEN] [%s] scePthreadCreate(%s) \n", &Selfname, name);
 
