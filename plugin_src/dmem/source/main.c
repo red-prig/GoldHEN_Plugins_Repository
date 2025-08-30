@@ -103,12 +103,20 @@ HOOK_INIT(sceKernelStat);
 HOOK_INIT(sceKernelVirtualQuery);
 HOOK_INIT(scePthreadCreate);
 
+HOOK_INIT(sceGnmMapComputeQueue);
+HOOK_INIT(sceGnmMapComputeQueueWithPriority);
+HOOK_INIT(sceGnmUnmapComputeQueue);
+
 // Function defs
 //int sceKernelMapFlexibleMemory(void**, size_t, int, int);
 //int sceKernelMapNamedFlexibleMemory(void**, size_t, int, int, const char*);
 //int sceKernelOpen(const char*, int, OrbisKernelMode);
 //int sceKernelVirtualQuery(const void *, int, OrbisKernelVirtualQueryInfo *, size_t);
 //void* mmap(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos);
+
+void* sceGnmMapComputeQueue;
+void* sceGnmMapComputeQueueWithPriority;
+void* sceGnmUnmapComputeQueue;
 
 #define GET_SELF_NAME() \
     char Selfname[32] = {}; \
@@ -267,13 +275,49 @@ int sceKernelVirtualQuery_hook(const void * addr, int flags, _OrbisKernelVirtual
 int scePthreadCreate_hook(void** thread, void* attr, void* func, void* arg, const char* name) {
 
     GET_SELF_NAME();
-   
+
     final_printf("[GoldHEN] [%s] scePthreadCreate(%s) \n", &Selfname, name);
 
     int ret = HOOK_CONTINUE(scePthreadCreate, int(*)(void** thread, void* attr, void* func, void* arg, const char* name), thread, attr, func, arg, name);
 
     return ret;
-}
+};
+
+[[gnu::force_align_arg_pointer]]
+int sceGnmMapComputeQueue_hook(uint globalPipeId, uint queueId, void* ringBaseAddr, uint ringSizeInDW, void* readPtrAddr) {
+
+    GET_SELF_NAME();
+
+    int ret = HOOK_CONTINUE(sceGnmMapComputeQueue, int(*)(uint, uint, void*, uint, void*), globalPipeId, queueId, ringBaseAddr, ringSizeInDW, readPtrAddr);
+
+    final_printf("[GoldHEN] [%s] sceGnmMapComputeQueue(%d,%d,0x%010llX,%d,0x%010llX), returning = %d\n", &Selfname, globalPipeId, queueId, ringBaseAddr, ringSizeInDW, readPtrAddr, ret);
+
+    return ret;
+};
+
+[[gnu::force_align_arg_pointer]]
+int sceGnmMapComputeQueueWithPriority_hook(uint globalPipeId, uint queueId, void* ringBaseAddr, uint ringSizeInDW, void* readPtrAddr, uint pipePriority) {
+
+    GET_SELF_NAME();
+
+    int ret = HOOK_CONTINUE(sceGnmMapComputeQueueWithPriority, int(*)(uint, uint, void*, uint, void*, uint), globalPipeId, queueId, ringBaseAddr, ringSizeInDW, readPtrAddr, pipePriority);
+
+    final_printf("[GoldHEN] [%s] sceGnmMapComputeQueueWithPriority(%d,%d,0x%010llX,%d,0x%010llX,%d), returning = %d\n", &Selfname, globalPipeId, queueId, ringBaseAddr, ringSizeInDW, readPtrAddr, pipePriority, ret);
+
+    return ret;
+};
+
+[[gnu::force_align_arg_pointer]]
+void sceGnmUnmapComputeQueue_hook(uint vqueueId) {
+
+    GET_SELF_NAME();
+
+    HOOK_CONTINUE(sceGnmUnmapComputeQueue, int(*)(uint), vqueueId);
+
+    final_printf("[GoldHEN] [%s] sceGnmUnmapComputeQueue(%d)\n", &Selfname, vqueueId);
+
+};
+
 
 [[gnu::force_align_arg_pointer]]
 int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
@@ -291,6 +335,16 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   HOOK16(sceKernelVirtualQuery);
   HOOK16(scePthreadCreate);
 
+  s32 h = 0;
+  sys_dynlib_load_prx("libSceGnmDriver.sprx", &h);
+  sys_dynlib_dlsym(h, "sceGnmMapComputeQueue"            , &sceGnmMapComputeQueue);
+  sys_dynlib_dlsym(h, "sceGnmMapComputeQueueWithPriority", &sceGnmMapComputeQueueWithPriority);
+  sys_dynlib_dlsym(h, "sceGnmUnmapComputeQueue"          , &sceGnmUnmapComputeQueue);
+
+  HOOK32(sceGnmMapComputeQueue);
+  HOOK32(sceGnmMapComputeQueueWithPriority);
+  HOOK16(sceGnmUnmapComputeQueue);
+
   return 0;
 };
 
@@ -307,6 +361,10 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
   UNHOOK(sceKernelStat);
   UNHOOK(sceKernelVirtualQuery);
   UNHOOK(scePthreadCreate);
+
+  UNHOOK(sceGnmMapComputeQueue);
+  UNHOOK(sceGnmMapComputeQueueWithPriority);
+  UNHOOK(sceGnmUnmapComputeQueue);
 
   return 0;
 };
