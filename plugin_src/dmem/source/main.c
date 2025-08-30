@@ -96,6 +96,8 @@ void* Detour_DetourFunction16(Detour* This, uint64_t FunctionPtr, void* HookPtr)
 HOOK_INIT(mmap);
 HOOK_INIT(sceKernelMapNamedFlexibleMemory);
 HOOK_INIT(sceKernelMapFlexibleMemory);
+HOOK_INIT(sceKernelMapDirectMemory);
+HOOK_INIT(sceKernelMunmap);
 HOOK_INIT(sceKernelOpen);
 HOOK_INIT(sceKernelStat);
 HOOK_INIT(sceKernelVirtualQuery);
@@ -152,6 +154,33 @@ int32_t sceKernelMapFlexibleMemory_hook(void** addr, uint64_t len, int prot, int
 
   return ret;
 };
+
+int32_t sceKernelMapDirectMemory_hook(void** addr, uint64_t len, int prot, int flags, uint64_t directMemoryStart, uint64_t alignment) {
+
+    GET_SELF_NAME();
+
+    final_printf("[GoldHEN] [%s] sceKernelMapDirectMemory-> called on 0x%010llX,0x%010llX,0x%02llX,0x%08llX,0x%08llX,0x%08llX \n", &Selfname, *addr, len, prot, flags, directMemoryStart, alignment);
+
+    int32_t ret = HOOK_CONTINUE(sceKernelMapDirectMemory, int(*)(void**, uint64_t, int, int, uint64_t, uint64_t), addr, len, prot, flags, directMemoryStart, alignment);
+
+    final_printf("[GoldHEN] [%s] sceKernelMapDirectMemory<- called on 0x%010llX, returning = 0x%08llX\n", &Selfname, *addr, ret);
+
+    return ret;
+}
+
+int sceKernelMunmap_hook(void* addr, uint64_t len) {
+
+    GET_SELF_NAME();
+
+    final_printf("[GoldHEN] [%s] sceKernelMunmap-> called on 0x%010llX,0x%010llX \n", &Selfname, addr, len);
+
+    int32_t ret = HOOK_CONTINUE(sceKernelMunmap, int(*)(void*, uint64_t), addr, len);
+
+    final_printf("[GoldHEN] [%s] sceKernelMunmap<- called on 0x%010llX, returning = 0x%08llX\n", &Selfname, addr, ret);
+
+    return ret;
+}
+
 
 [[gnu::force_align_arg_pointer]]
 int sceKernelOpen_hook(const char* path, int flags, OrbisKernelMode mode) {
@@ -253,6 +282,8 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
 
   HOOK32(sceKernelMapNamedFlexibleMemory);
   HOOK16(sceKernelMapFlexibleMemory);
+  HOOK32(sceKernelMapDirectMemory);
+  HOOK16(sceKernelMunmap);
   HOOK32(sceKernelOpen);
   HOOK16(sceKernelStat);
   HOOK16(sceKernelVirtualQuery);
@@ -268,6 +299,8 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
 
   UNHOOK(sceKernelMapNamedFlexibleMemory);
   UNHOOK(sceKernelMapFlexibleMemory);
+  UNHOOK(sceKernelMapDirectMemory);
+  UNHOOK(sceKernelMunmap);
   UNHOOK(sceKernelOpen);
   UNHOOK(sceKernelStat);
   UNHOOK(sceKernelVirtualQuery);
