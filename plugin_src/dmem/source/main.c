@@ -155,6 +155,7 @@ int32_t sceKernelMapFlexibleMemory_hook(void** addr, uint64_t len, int prot, int
   return ret;
 };
 
+[[gnu::force_align_arg_pointer]]
 int32_t sceKernelMapDirectMemory_hook(void** addr, uint64_t len, int prot, int flags, uint64_t directMemoryStart, uint64_t alignment) {
 
     GET_SELF_NAME();
@@ -168,6 +169,7 @@ int32_t sceKernelMapDirectMemory_hook(void** addr, uint64_t len, int prot, int f
     return ret;
 }
 
+[[gnu::force_align_arg_pointer]]
 int sceKernelMunmap_hook(void* addr, uint64_t len) {
 
     GET_SELF_NAME();
