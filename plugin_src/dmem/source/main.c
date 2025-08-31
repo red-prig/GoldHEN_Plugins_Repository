@@ -109,6 +109,9 @@ HOOK_INIT(sceGnmMapComputeQueue);
 HOOK_INIT(sceGnmMapComputeQueueWithPriority);
 HOOK_INIT(sceGnmUnmapComputeQueue);
 
+HOOK_INIT(sceKernelGetCompiledSdkVersion);
+HOOK_INIT(sceKernelGetAppInfo);
+
 // Function defs
 //int sceKernelMapFlexibleMemory(void**, size_t, int, int);
 //int sceKernelMapNamedFlexibleMemory(void**, size_t, int, int, const char*);
@@ -328,8 +331,32 @@ void sceGnmUnmapComputeQueue_hook(uint vqueueId) {
     HOOK_CONTINUE(sceGnmUnmapComputeQueue, int(*)(uint), vqueueId);
 
     final_printf("[GoldHEN] [%s] sceGnmUnmapComputeQueue(%d)\n", &Selfname, vqueueId);
-
 };
+
+[[gnu::force_align_arg_pointer]]
+int sceKernelGetCompiledSdkVersion_hook(uint* p_sdk_version) {
+
+    GET_SELF_NAME();
+
+    int ret = HOOK_CONTINUE(sceKernelGetCompiledSdkVersion, int(*)(uint*), p_sdk_version);
+
+    final_printf("[GoldHEN] [%s] sceKernelGetCompiledSdkVersion(0x%08llX), returning = %d\n", &Selfname, *p_sdk_version, ret);
+
+    return ret;
+}
+
+[[gnu::force_align_arg_pointer]]
+int sceKernelGetAppInfo_hook(int pid, int* app_info) {
+
+    GET_SELF_NAME();
+
+    int ret = HOOK_CONTINUE(sceKernelGetAppInfo, int(*)(int, int*), pid, app_info);
+
+    final_printf("[GoldHEN] [%s] sceKernelGetAppInfo(), AppId = 0x%08llX, mmap_flags = %d, returning = %d\n", &Selfname, app_info[0], app_info[1], ret);
+
+    return ret;
+}
+
 
 
 [[gnu::force_align_arg_pointer]]
@@ -360,6 +387,9 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   HOOK32(sceGnmMapComputeQueueWithPriority);
   HOOK16(sceGnmUnmapComputeQueue);
 
+  HOOK32(sceKernelGetCompiledSdkVersion);
+  HOOK32(sceKernelGetAppInfo);
+
   return 0;
 };
 
@@ -382,6 +412,9 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
   UNHOOK(sceGnmMapComputeQueue);
   UNHOOK(sceGnmMapComputeQueueWithPriority);
   UNHOOK(sceGnmUnmapComputeQueue);
+
+  UNHOOK(sceKernelGetCompiledSdkVersion);
+  UNHOOK(sceKernelGetAppInfo);
 
   return 0;
 };
