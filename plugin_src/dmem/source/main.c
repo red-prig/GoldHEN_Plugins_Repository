@@ -101,7 +101,9 @@ HOOK_INIT(sceKernelMunmap);
 HOOK_INIT(sceKernelOpen);
 HOOK_INIT(sceKernelStat);
 HOOK_INIT(sceKernelVirtualQuery);
+
 HOOK_INIT(scePthreadCreate);
+HOOK_INIT(scePthreadExit);
 
 HOOK_INIT(sceGnmMapComputeQueue);
 HOOK_INIT(sceGnmMapComputeQueueWithPriority);
@@ -284,6 +286,17 @@ int scePthreadCreate_hook(void** thread, void* attr, void* func, void* arg, cons
 };
 
 [[gnu::force_align_arg_pointer]]
+void scePthreadExit_hook(void* value_ptr) {
+
+    GET_SELF_NAME();
+
+    final_printf("[GoldHEN] [%s] scePthreadExit(0x%010llX)\n", &Selfname, value_ptr);
+
+    HOOK_CONTINUE(scePthreadExit, void(*)(void*), value_ptr);
+
+}
+
+[[gnu::force_align_arg_pointer]]
 int sceGnmMapComputeQueue_hook(uint globalPipeId, uint queueId, void* ringBaseAddr, uint ringSizeInDW, void* readPtrAddr) {
 
     GET_SELF_NAME();
@@ -333,7 +346,9 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   HOOK32(sceKernelOpen);
   HOOK16(sceKernelStat);
   HOOK16(sceKernelVirtualQuery);
+
   HOOK16(scePthreadCreate);
+  HOOK16(scePthreadExit);
 
   s32 h = 0;
   sys_dynlib_load_prx("libSceGnmDriver.sprx", &h);
@@ -360,7 +375,9 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
   UNHOOK(sceKernelOpen);
   UNHOOK(sceKernelStat);
   UNHOOK(sceKernelVirtualQuery);
+
   UNHOOK(scePthreadCreate);
+  UNHOOK(scePthreadExit);
 
   UNHOOK(sceGnmMapComputeQueue);
   UNHOOK(sceGnmMapComputeQueueWithPriority);
