@@ -116,6 +116,8 @@ HOOK_INIT(sceFiberReturnToThread);
 HOOK_INIT(sceFiberRun);
 HOOK_INIT(sceFiberSwitch);
 
+HOOK_INIT(scePadSetVibration);
+
 // Function defs
 //int sceKernelMapFlexibleMemory(void**, size_t, int, int);
 //int sceKernelMapNamedFlexibleMemory(void**, size_t, int, int, const char*);
@@ -132,16 +134,19 @@ int (*sceFiberReturnToThread)(uint64_t argOnReturn, uint64_t* argOnRun);
 int (*sceFiberRun)           (void* fiber, uint64_t argOnRunTo, uint64_t* argOnReturn);
 int (*sceFiberSwitch)        (void* fiber, uint64_t argOnRunTo, uint64_t* argOnRun);
 
+int (*scePadSetVibration)(int handle, void* pParam);
 
 
 #define GET_SELF_NAME() \
     char Selfname[32+4+10+1] = {}; \
     { \
+     scePthreadGetname(scePthreadSelf(), &Selfname); \
      void* ftmp = {}; \
      sceFiberGetSelf(&ftmp); \
-     scePthreadGetname(scePthreadSelf(), &Selfname); \
-     int len = strnlen(&Selfname, 32); \
-     snprintf(&Selfname[len], 4+10, ":F0x%010llX", ftmp); \
+     if (ftmp != NULL) { \
+      int len = strnlen(&Selfname, 32); \
+      snprintf(&Selfname[len], 4 + 10 + 1, ":F0x%010llX", ftmp); \
+     } \
     }
 
 [[gnu::force_align_arg_pointer]]
@@ -428,6 +433,19 @@ int sceFiberSwitch_hook(void* fiber, uint64_t argOnRunTo, uint64_t* argOnRun) {
     return ret;
 };
 
+[[gnu::force_align_arg_pointer]]
+int scePadSetVibration_hook(int handle, void* pParam) {
+
+    GET_SELF_NAME();
+    final_printf("[GoldHEN] [%s] ->scePadSetVibration(0x%08llX,0x%010llX)\n", &Selfname, handle, pParam);
+
+    int ret = HOOK_CONTINUE(scePadSetVibration, int(*)(int, void*), handle, pParam);
+
+    final_printf("[GoldHEN] [%s] <-scePadSetVibration(), returning = %d\n", &Selfname, ret);
+
+    return ret;
+};
+
 
 [[gnu::force_align_arg_pointer]]
 int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
@@ -471,6 +489,12 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   HOOK32(sceFiberRun);
   HOOK32(sceFiberSwitch);
 
+  h = 0;
+  sys_dynlib_load_prx("libScePad.sprx", &h);
+  sys_dynlib_dlsym(h, "scePadSetVibration", &scePadSetVibration);
+
+  HOOK32(scePadSetVibration);
+
   return 0;
 };
 
@@ -500,6 +524,8 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
   UNHOOK(sceFiberReturnToThread);
   UNHOOK(sceFiberRun);
   UNHOOK(sceFiberSwitch);
+
+  UNHOOK(scePadSetVibration);
 
   return 0;
 };
