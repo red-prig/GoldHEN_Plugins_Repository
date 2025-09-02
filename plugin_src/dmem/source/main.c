@@ -374,6 +374,7 @@ int sceKernelGetAppInfo_hook(int pid, int* app_info) {
     return ret;
 };
 
+[[gnu::force_align_arg_pointer]]
 int sceFiberReturnToThread_hook(uint64_t argOnReturn, uint64_t* argOnRun) {
 
     {
@@ -391,6 +392,7 @@ int sceFiberReturnToThread_hook(uint64_t argOnReturn, uint64_t* argOnRun) {
     return ret;
 };
 
+[[gnu::force_align_arg_pointer]]
 int sceFiberRun_hook(void* fiber, uint64_t argOnRunTo, uint64_t* argOnReturn) {
 
     {
@@ -408,6 +410,7 @@ int sceFiberRun_hook(void* fiber, uint64_t argOnRunTo, uint64_t* argOnReturn) {
     return ret;
 };
 
+[[gnu::force_align_arg_pointer]]
 int sceFiberSwitch_hook(void* fiber, uint64_t argOnRunTo, uint64_t* argOnRun) {
 
     {
