@@ -112,6 +112,10 @@ HOOK_INIT(sceGnmUnmapComputeQueue);
 HOOK_INIT(sceKernelGetCompiledSdkVersion);
 HOOK_INIT(sceKernelGetAppInfo);
 
+HOOK_INIT(sceFiberReturnToThread);
+HOOK_INIT(sceFiberRun);
+HOOK_INIT(sceFiberSwitch);
+
 // Function defs
 //int sceKernelMapFlexibleMemory(void**, size_t, int, int);
 //int sceKernelMapNamedFlexibleMemory(void**, size_t, int, int, const char*);
@@ -123,9 +127,22 @@ void* sceGnmMapComputeQueue;
 void* sceGnmMapComputeQueueWithPriority;
 void* sceGnmUnmapComputeQueue;
 
+int (*sceFiberGetSelf)       (void** fiber);
+int (*sceFiberReturnToThread)(uint64_t argOnReturn, uint64_t* argOnRun);
+int (*sceFiberRun)           (void* fiber, uint64_t argOnRunTo, uint64_t* argOnReturn);
+int (*sceFiberSwitch)        (void* fiber, uint64_t argOnRunTo, uint64_t* argOnRun);
+
+
+
 #define GET_SELF_NAME() \
-    char Selfname[32] = {}; \
-    scePthreadGetname(scePthreadSelf(), &Selfname);
+    char Selfname[32+4+10+1] = {}; \
+    { \
+     void* fiber = {}; \
+     sceFiberGetSelf(&fiber); \
+     scePthreadGetname(scePthreadSelf(), &Selfname); \
+     int len = strnlen(&Selfname, 32); \
+     snprintf(&Selfname[len], 4+10, ":F0x%010llX", fiber); \
+    }
 
 [[gnu::force_align_arg_pointer]]
 void* mmap_hook(void* addr, uint64_t len, int prot, int flags, int fd, uint64_t pos) {
@@ -343,7 +360,7 @@ int sceKernelGetCompiledSdkVersion_hook(uint* p_sdk_version) {
     final_printf("[GoldHEN] [%s] sceKernelGetCompiledSdkVersion(0x%08llX), returning = %d\n", &Selfname, *p_sdk_version, ret);
 
     return ret;
-}
+};
 
 [[gnu::force_align_arg_pointer]]
 int sceKernelGetAppInfo_hook(int pid, int* app_info) {
@@ -355,8 +372,58 @@ int sceKernelGetAppInfo_hook(int pid, int* app_info) {
     final_printf("[GoldHEN] [%s] sceKernelGetAppInfo(), AppId = 0x%08llX, mmap_flags = %d, returning = %d\n", &Selfname, app_info[0], app_info[1], ret);
 
     return ret;
-}
+};
 
+int sceFiberReturnToThread_hook(uint64_t argOnReturn, uint64_t* argOnRun) {
+
+    {
+        GET_SELF_NAME();
+        final_printf("[GoldHEN] [%s] ->sceFiberReturnToThread(0x%016llX,)\n", &Selfname, argOnReturn);
+    }
+
+    int ret = HOOK_CONTINUE(sceFiberReturnToThread, int(*)(uint64_t, uint64_t*), argOnReturn, argOnRun);
+
+    {
+        GET_SELF_NAME();
+        final_printf("[GoldHEN] [%s] <-sceFiberReturnToThread(,0x%016llX), returning = %d\n", &Selfname, *argOnRun, ret);
+    }
+
+    return ret;
+};
+
+int sceFiberRun_hook(void* fiber, uint64_t argOnRunTo, uint64_t* argOnReturn) {
+
+    {
+        GET_SELF_NAME();
+        final_printf("[GoldHEN] [%s] ->sceFiberRun(0x%010llX,0x%016llX,)\n", &Selfname, fiber, argOnRunTo);
+    }
+
+    int ret = HOOK_CONTINUE(sceFiberRun, int(*)(void*, uint64_t, uint64_t*), fiber, argOnRunTo, argOnReturn);
+
+    {
+        GET_SELF_NAME();
+        final_printf("[GoldHEN] [%s] <-sceFiberRun(0x%010llX,,0x%016llX), returning = %d\n", &Selfname, fiber, *argOnReturn, ret);
+    }
+
+    return ret;
+};
+
+int sceFiberSwitch_hook(void* fiber, uint64_t argOnRunTo, uint64_t* argOnRun) {
+
+    {
+        GET_SELF_NAME();
+        final_printf("[GoldHEN] [%s] ->sceFiberSwitch(0x%010llX,0x%016llX,)\n", &Selfname, fiber, argOnRunTo);
+    }
+
+    int ret = HOOK_CONTINUE(sceFiberSwitch, int(*)(void*, uint64_t, uint64_t*), fiber, argOnRunTo, argOnRun);
+
+    {
+        GET_SELF_NAME();
+        final_printf("[GoldHEN] [%s] <-sceFiberSwitch(0x%010llX,,0x%016llX), returning = %d\n", &Selfname, fiber, *argOnRun, ret);
+    }
+
+    return ret;
+};
 
 
 [[gnu::force_align_arg_pointer]]
@@ -390,6 +457,17 @@ int32_t attr_public plugin_load(s32 argc, const char* argv[]) {
   HOOK32(sceKernelGetCompiledSdkVersion);
   HOOK32(sceKernelGetAppInfo);
 
+  h = 0;
+  sys_dynlib_load_prx("libSceFiber.sprx", &h);
+  sys_dynlib_dlsym(h, "sceFiberGetSelf"       , &sceFiberGetSelf);
+  sys_dynlib_dlsym(h, "sceFiberReturnToThread", &sceFiberReturnToThread);
+  sys_dynlib_dlsym(h, "sceFiberRun"           , &sceFiberRun);
+  sys_dynlib_dlsym(h, "sceFiberSwitch"        , &sceFiberSwitch);
+
+  HOOK32(sceFiberReturnToThread);
+  HOOK32(sceFiberRun);
+  HOOK32(sceFiberSwitch);
+
   return 0;
 };
 
@@ -415,6 +493,10 @@ int32_t attr_public plugin_unload(s32 argc, const char* argv[]) {
 
   UNHOOK(sceKernelGetCompiledSdkVersion);
   UNHOOK(sceKernelGetAppInfo);
+
+  UNHOOK(sceFiberReturnToThread);
+  UNHOOK(sceFiberRun);
+  UNHOOK(sceFiberSwitch);
 
   return 0;
 };
