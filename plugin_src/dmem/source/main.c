@@ -137,11 +137,11 @@ int (*sceFiberSwitch)        (void* fiber, uint64_t argOnRunTo, uint64_t* argOnR
 #define GET_SELF_NAME() \
     char Selfname[32+4+10+1] = {}; \
     { \
-     void* fiber = {}; \
-     sceFiberGetSelf(&fiber); \
+     void* ftmp = {}; \
+     sceFiberGetSelf(&ftmp); \
      scePthreadGetname(scePthreadSelf(), &Selfname); \
      int len = strnlen(&Selfname, 32); \
-     snprintf(&Selfname[len], 4+10, ":F0x%010llX", fiber); \
+     snprintf(&Selfname[len], 4+10, ":F0x%010llX", ftmp); \
     }
 
 [[gnu::force_align_arg_pointer]]
@@ -415,14 +415,14 @@ int sceFiberSwitch_hook(void* fiber, uint64_t argOnRunTo, uint64_t* argOnRun) {
 
     {
         GET_SELF_NAME();
-        final_printf("[GoldHEN] [%s] ->sceFiberSwitch(0x%010llX,0x%016llX,)\n", &Selfname, fiber, argOnRunTo);
+        final_printf("[GoldHEN] [%s] ->sceFiberSwitch(0x%010llX)\n", &Selfname, fiber);
     }
 
     int ret = HOOK_CONTINUE(sceFiberSwitch, int(*)(void*, uint64_t, uint64_t*), fiber, argOnRunTo, argOnRun);
 
     {
         GET_SELF_NAME();
-        final_printf("[GoldHEN] [%s] <-sceFiberSwitch(0x%010llX,,0x%016llX), returning = %d\n", &Selfname, fiber, *argOnRun, ret);
+        final_printf("[GoldHEN] [%s] <-sceFiberSwitch(0x%010llX), returning = %d\n", &Selfname, fiber, ret);
     }
 
     return ret;
