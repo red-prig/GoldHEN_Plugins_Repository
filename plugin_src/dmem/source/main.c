@@ -367,14 +367,81 @@ int sceKernelGetCompiledSdkVersion_hook(uint* p_sdk_version) {
     return ret;
 };
 
+typedef struct
+{
+    int32_t version;
+    int32_t;
+    uint64_t ids_bits[2];
+} OrbisTitleWorkaround;
+
+typedef struct
+{
+    int32_t  AppId;
+    int32_t  mmap_flags;
+    int32_t  attributeExe;
+    int32_t  AppType;
+    char     TitleId[10];
+    uint8_t  debug_level;
+    uint8_t  slv_flags;
+    uint8_t  miniAppDmemFlags;
+    uint8_t  render_mode;
+    uint8_t  mdbg_out;
+    uint8_t  requiredHdcpType;
+    uint64_t preloadPrxFlags;
+    int32_t  attribute;
+    int32_t  hasParamSfo;
+    OrbisTitleWorkaround TitleWorkaround;
+} OrbisAppInfo;
+
 [[gnu::force_align_arg_pointer]]
-int sceKernelGetAppInfo_hook(int pid, int* app_info) {
+int sceKernelGetAppInfo_hook(int pid, OrbisAppInfo* app_info) {
 
     GET_SELF_NAME();
 
     int ret = HOOK_CONTINUE(sceKernelGetAppInfo, int(*)(int, int*), pid, app_info);
 
-    final_printf("[GoldHEN] [%s] sceKernelGetAppInfo(), AppId = 0x%08llX, mmap_flags = %d, returning = %d\n", &Selfname, app_info[0], app_info[1], ret);
+    final_printf("[GoldHEN] [%s] sceKernelGetAppInfo() returning = %d\n"
+                 "  AppId           =0x%08llX\n"
+                 "  mmap_flags      =0x%08llX\n"
+                 "  attributeExe    =0x%08llX\n"
+                 "  AppType         =0x%08llX\n"
+                 "  TitleId         =%s\n"
+                 "  debug_level     =0x%02llX\n"
+                 "  slv_flags       =0x%02llX\n"
+                 "  miniAppDmemFlags=0x%02llX\n"
+                 "  render_mode     =0x%02llX\n"
+                 "  mdbg_out        =0x%02llX\n"
+                 "  requiredHdcpType=0x%02llX\n"
+                 "  preloadPrxFlags =0x%016llX\n"
+                 "  attribute       =0x%08llX\n"
+                 "  hasParamSfo     =0x%08llX\n"
+                 "  version         =0x%08llX\n"
+                 "  ids_bits[0]     =0x%016llX\n"
+                 "  ids_bits[1]     =0x%016llX\n"
+        ,
+        &Selfname,
+        ret,
+        app_info->AppId,
+        app_info->mmap_flags,
+        app_info->attributeExe,
+        app_info->AppType,
+        app_info->TitleId,
+        app_info->debug_level,
+        app_info->slv_flags,
+        app_info->miniAppDmemFlags,
+        app_info->render_mode,
+        app_info->mdbg_out,
+        app_info->requiredHdcpType,
+        app_info->preloadPrxFlags,
+        app_info->attribute,
+        app_info->hasParamSfo,
+        app_info->TitleWorkaround.version,
+        app_info->TitleWorkaround.ids_bits[0],
+        app_info->TitleWorkaround.ids_bits[1]
+    );
+
+
+    //final_printf("[GoldHEN] [%s] sceKernelGetAppInfo(), AppId = 0x%08llX, mmap_flags = %d, returning = %d\n", &Selfname, app_info[0], app_info[1], ret);
 
     return ret;
 };
