@@ -372,7 +372,7 @@ typedef struct
     int32_t version;
     int32_t;
     uint64_t ids_bits[2];
-} OrbisTitleWorkaround;
+} _OrbisTitleWorkaround;
 
 typedef struct
 {
@@ -390,11 +390,11 @@ typedef struct
     uint64_t preloadPrxFlags;
     int32_t  attribute;
     int32_t  hasParamSfo;
-    OrbisTitleWorkaround TitleWorkaround;
-} OrbisAppInfo;
+    _OrbisTitleWorkaround TitleWorkaround;
+} _OrbisAppInfo;
 
 [[gnu::force_align_arg_pointer]]
-int sceKernelGetAppInfo_hook(int pid, OrbisAppInfo* app_info) {
+int sceKernelGetAppInfo_hook(int pid, _OrbisAppInfo* app_info) {
 
     GET_SELF_NAME();
 
@@ -439,9 +439,6 @@ int sceKernelGetAppInfo_hook(int pid, OrbisAppInfo* app_info) {
         app_info->TitleWorkaround.ids_bits[0],
         app_info->TitleWorkaround.ids_bits[1]
     );
-
-
-    //final_printf("[GoldHEN] [%s] sceKernelGetAppInfo(), AppId = 0x%08llX, mmap_flags = %d, returning = %d\n", &Selfname, app_info[0], app_info[1], ret);
 
     return ret;
 };
